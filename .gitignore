@@ -6,3 +6,7 @@ logs/
 scripts/k9s/clusters/
 scripts/k9s/screen-dumps/
 scripts/k9s/benchmarks/
+
+# random local stuff
+AGENTS.md
+task.md
