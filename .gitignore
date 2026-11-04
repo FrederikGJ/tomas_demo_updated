@@ -1,0 +1,8 @@
+port_forward_pids.txt
+loki-data/
+logs/
+
+# k9s runtime state (scripts/k9s is used as K9S_CONFIG_DIR by scripts/k9s.sh)
+scripts/k9s/clusters/
+scripts/k9s/screen-dumps/
+scripts/k9s/benchmarks/

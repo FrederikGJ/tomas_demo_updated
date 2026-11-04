@@ -1,0 +1,124 @@
+# DLS - a calm dark k9s skin for the microservices-scaling demo.
+# Backgrounds are "default" (transparent), so your terminal background shows through.
+#
+# Palette
+#   text    #d0d7e5   muted   #8a93a8   slate  #34415e   ink  #141821
+#   teal    #4fd1c5   blue    #6cb6ff   purple #b392f0
+#   green   #7ee2a8   amber   #f5c26b   red    #f47067
+k9s:
+  body:
+    fgColor: "#d0d7e5"
+    bgColor: default
+    logoColor: "#4fd1c5"
+    logoColorMsg: "#d0d7e5"
+    logoColorInfo: "#7ee2a8"
+    logoColorWarn: "#f5c26b"
+    logoColorError: "#f47067"
+  prompt:
+    fgColor: "#d0d7e5"
+    bgColor: default
+    suggestColor: "#8a93a8"
+    border:
+      command: "#4fd1c5"
+      default: "#6cb6ff"
+  info:
+    fgColor: "#f5c26b"
+    sectionColor: "#8a93a8"
+    cpuColor: "#4fd1c5"
+    memColor: "#b392f0"
+    k9sRevColor: "#7ee2a8"
+  help:
+    fgColor: "#d0d7e5"
+    bgColor: default
+    keyColor: "#4fd1c5"
+    numKeyColor: "#b392f0"
+    sectionColor: "#6cb6ff"
+  dialog:
+    fgColor: "#d0d7e5"
+    bgColor: default
+    buttonFgColor: "#d0d7e5"
+    buttonBgColor: "#34415e"
+    buttonFocusFgColor: "#141821"
+    buttonFocusBgColor: "#4fd1c5"
+    labelFgColor: "#f5c26b"
+    fieldFgColor: "#d0d7e5"
+  frame:
+    border:
+      fgColor: "#34415e"
+      focusColor: "#4fd1c5"
+    menu:
+      fgColor: "#d0d7e5"
+      keyColor: "#4fd1c5"
+      numKeyColor: "#b392f0"
+    crumbs:
+      fgColor: "#141821"
+      bgColor: "#6cb6ff"
+      activeColor: "#4fd1c5"
+    status:
+      newColor: "#d0d7e5"
+      modifyColor: "#6cb6ff"
+      addColor: "#7ee2a8"
+      pendingColor: "#f5c26b"
+      errorColor: "#f47067"
+      highlightColor: "#f5c26b"
+      killColor: "#b392f0"
+      completedColor: "#8a93a8"
+    title:
+      fgColor: "#d0d7e5"
+      bgColor: default
+      highlightColor: "#f5c26b"
+      counterColor: "#b392f0"
+      filterColor: "#7ee2a8"
+  views:
+    table:
+      fgColor: "#d0d7e5"
+      bgColor: default
+      cursorFgColor: "#ffffff"
+      cursorBgColor: "#34415e"
+      markColor: "#f5c26b"
+      header:
+        fgColor: "#6cb6ff"
+        bgColor: default
+        sorterColor: "#4fd1c5"
+        selectedSortColumnColor: "#f5c26b"
+    xray:
+      fgColor: "#d0d7e5"
+      bgColor: default
+      cursorColor: "#34415e"
+      cursorTextColor: "#ffffff"
+      graphicColor: "#6cb6ff"
+    charts:
+      bgColor: default
+      dialBgColor: default
+      chartBgColor: default
+      defaultDialColors:
+        - "#4fd1c5"
+        - "#f47067"
+      defaultChartColors:
+        - "#4fd1c5"
+        - "#f47067"
+      resourceColors:
+        cpu:
+          - "#6cb6ff"
+          - "#b392f0"
+        memory:
+          - "#f5c26b"
+          - "#f47067"
+      focusFgColor: "#141821"
+      focusBgColor: "#4fd1c5"
+    yaml:
+      keyColor: "#6cb6ff"
+      colonColor: "#8a93a8"
+      valueColor: "#d0d7e5"
+    picker:
+      mainColor: "#d0d7e5"
+      focusColor: "#4fd1c5"
+      shortcutColor: "#f5c26b"
+    logs:
+      fgColor: "#d0d7e5"
+      bgColor: default
+      indicator:
+        fgColor: "#6cb6ff"
+        bgColor: default
+        toggleOnColor: "#7ee2a8"
+        toggleOffColor: "#8a93a8"

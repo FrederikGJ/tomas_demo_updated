@@ -1,0 +1,8 @@
+# Custom "Enter" jumps (k9s >= v0.51).
+# Enter on a KEDA ScaledObject shows the pods it scales. This relies on the convention
+# in kubernetes/ that a deployment's pods carry the label app=<deployment name>.
+# (Describe is still available on `d`.)
+jumps:
+  "keda.sh/v1alpha1/scaledobjects":
+    targetGVR: "v1/pods"
+    labelSelector: "app={{.spec.scaleTargetRef.name}}"

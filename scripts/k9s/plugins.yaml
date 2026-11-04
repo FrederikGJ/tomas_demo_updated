@@ -1,0 +1,85 @@
+# Project plugins - shown in the k9s menu (top right) in the views listed under `scopes`.
+#
+# NOTE: before running a command, k9s replaces $NAME, $NAMESPACE, $CONTEXT, ... in the
+# args (case-insensitive!). The bash snippets therefore only use shell variables whose
+# names don't clash with those (no $name, $namespace, $context, $user, $pod, ...).
+# Interactive plugins exit with `q`, so you don't need Ctrl-C.
+plugins:
+  # Live view of the RabbitMQ queues next to the KEDA/HPA replica counts.
+  queues-and-scaling:
+    shortCut: Shift-Q
+    description: Queues & scaling
+    scopes:
+      - all
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        while true; do
+          queues="$(kubectl --context "$CONTEXT" -n default exec deploy/rabbitmq -- \
+            rabbitmqctl -q list_queues name messages_ready messages_unacknowledged consumers \
+            --formatter pretty_table 2>&1)"
+          hpas="$(kubectl --context "$CONTEXT" -n default get hpa 2>&1)"
+          printf '\033[H\033[2J'
+          printf '\033[1m📨 RabbitMQ queues\033[0m   %s   (refreshes every 2s · q = back to k9s)\n\n%s\n\n' "$(date +%H:%M:%S)" "$queues"
+          printf '\033[1m📈 Autoscaling (KEDA -> HPA)\033[0m\n\n%s\n' "$hpas"
+          if read -rsn1 -t 2 key; then
+            case "$key" in q|Q) break ;; esac
+          fi
+        done
+
+  # Pause/resume KEDA autoscaling on the selected ScaledObject. While paused, the
+  # replica count is frozen, so you can watch the queue build up - then resume.
+  keda-pause-toggle:
+    shortCut: Shift-T
+    description: Pause/resume autoscaling
+    scopes:
+      - scaledobjects
+    command: bash
+    background: true
+    overwriteOutput: true
+    dangerous: true
+    args:
+      - -c
+      - |
+        target="scaledobject/$NAME"
+        paused="$(kubectl --context "$CONTEXT" -n "$NAMESPACE" get "$target" \
+          -o jsonpath='{.metadata.annotations.autoscaling\.keda\.sh/paused}' 2>/dev/null)"
+        if [ "$paused" = "true" ]; then
+          change="autoscaling.keda.sh/paused-"
+          msg="▶️  Autoscaling resumed for $NAME"
+        else
+          change="autoscaling.keda.sh/paused=true"
+          msg="⏸️  Autoscaling paused for $NAME (replicas frozen)"
+        fi
+        if out="$(kubectl --context "$CONTEXT" -n "$NAMESPACE" annotate "$target" "$change" --overwrite 2>&1)"; then
+          echo "$msg"
+        else
+          echo "❌ $out"
+        fi
+
+  # The bank-service runs as a plain Docker container outside the cluster (`make bank`),
+  # so k9s can't see it - this tails its logs.
+  bank-logs:
+    shortCut: Shift-B
+    description: Bank logs (docker)
+    scopes:
+      - all
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        printf '\033[1m🏦 bank-service logs\033[0m   (docker container outside the cluster · q = back to k9s)\n\n'
+        if docker inspect bank-service >/dev/null 2>&1; then
+          docker logs -f --tail 30 bank-service 2>&1 &
+          follower=$!
+        else
+          echo "bank-service container not found - start it with: make bank"
+        fi
+        while read -rsn1 key; do
+          case "$key" in q|Q) break ;; esac
+        done
+        [ -n "$follower" ] && kill "$follower" 2>/dev/null
+        exit 0

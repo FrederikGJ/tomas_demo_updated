@@ -1,0 +1,113 @@
+name: Transaction receiver microservice - Build, Test, Push image to Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "transaction-receiver/**" # Trigger if files in transaction-receiver/ folder change
+
+  workflow_dispatch: # Allows you to manually run the workflow from the Actions tab
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "20"
+
+      # This is for winston logger to write logs to /var/log/transaction-receiver
+      # We dont need logging for test but it would fail if the directory does not exist
+      - name: Create log directory
+        run: |
+          sudo mkdir -p /var/log/transaction-receiver
+          sudo chmod -R 777 /var/log/transaction-receiver
+
+      - name: Install dependencies
+        run: |
+          cd transaction-receiver
+          npm install
+
+      - name: Run integration tests
+        run: |
+          cd transaction-receiver
+          npx vitest run integration.test.ts
+
+  # system-tests:
+  #   runs-on: ubuntu-latest
+
+  #   services:
+  #     rabbitmq:
+  #       image: rabbitmq:3-management
+  #       ports:
+  #         - 5672:5672
+  #         - 15672:15672
+  #     fraud-detection:
+  #       image: pesekt1/fraud-detection:latest
+  #       options: --name fraud-detection
+  #       ports:
+  #         - 3003:3003
+  #       env:
+  #         PORT: 3003
+  #         RABBITMQ_URL: amqp://rabbitmq
+  #         INPUT_QUEUE_NAME: transactionPayloads
+  #         ACCEPTED_QUEUE_NAME: acceptedTransactions
+  #         SUSPICIOUS_QUEUE_NAME: suspiciousTransactions
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2
+
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v2
+  #       with:
+  #         node-version: "20"
+
+  #     - name: Install dependencies
+  #       run: |
+  #         cd transaction-receiver
+  #         npm install
+
+  #     - name: Run system tests
+  #       run: |
+  #         cd transaction-receiver/tests
+  #         npx vitest run system.test.ts
+
+  #     - name: Capture fraud-detection logs
+  #       if: failure()
+  #       run: |
+  #         echo "Capturing fraud-detection logs..."
+  #         docker logs fraud-detection
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [integration-tests] # Only run this job if the integration-tests job passes
+    # needs: [integration-tests, system-tests]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }} # Store your Docker Hub username in GitHub Secrets
+          password: ${{ secrets.DOCKER_PASSWORD }} # Store your Docker Hub password/token in GitHub Secrets
+
+      - name: Build and push Docker image for transaction-receiver microservice
+        run: |
+          docker build -t pesekt1/transaction-receiver:latest ./transaction-receiver
+          docker push pesekt1/transaction-receiver:latest

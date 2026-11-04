@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:
+    meta.helm.sh/release-name: "grafana"
+    meta.helm.sh/release-namespace: "default"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  # "hostpath" is Docker Desktop's class; grafana-install.sh swaps in the cluster's default class.
+  storageClassName: hostpath

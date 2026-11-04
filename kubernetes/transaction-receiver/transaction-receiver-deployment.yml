@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transaction-receiver
+  template:
+    metadata:
+      labels:
+        app: transaction-receiver
+    spec:
+      containers:
+      - name: transaction-receiver
+        image: pesekt1/transaction-receiver:latest
+        resources:
+          requests:
+            cpu: "100m"  # Request 100m (millicpu) for the container
+            memory: "128Mi"  # Request 128Mi memory
+          limits:
+            cpu: "500m"  # Limit the CPU usage to 500m
+            memory: "512Mi"  # Limit memory to 512Mi        
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PORT
+          value: "3000"
+        - name: RABBITMQ_URL
+          value: "amqp://rabbitmq"
+        - name: QUEUE_NAME
+          value: "transactionPayloads"
+        - name: MESSAGE_SPEED
+          value: "1000"
+        volumeMounts:
+          - name: log-volume
+            mountPath: /var/log/transaction-receiver  # Mount the log directory to this path
+      volumes:
+        - name: log-volume
+          hostPath:
+            path: /var/log/transaction-receiver  # This should be the location of logs on the node
+            type: DirectoryOrCreate

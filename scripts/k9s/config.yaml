@@ -1,0 +1,20 @@
+# k9s configuration for this project.
+# Loaded through K9S_CONFIG_DIR by scripts/k9s.sh (`make k9s`), so your personal
+# k9s config (~/.config/k9s or %LOCALAPPDATA%\k9s) is left untouched.
+# k9s writes its runtime state (clusters/, screen-dumps/, benchmarks/) next to
+# this file - those folders are git-ignored.
+k9s:
+  refreshRate: 2
+  # The k9s version is pinned in scripts/k9s.sh, so skip the "new version" check.
+  skipLatestRevCheck: true
+  ui:
+    skin: dls
+    # Reload skin/aliases/hotkeys/plugins as soon as a file in this folder is saved.
+    reactive: true
+    enableMouse: false
+  logger:
+    tail: 200
+    buffer: 5000
+    sinceSeconds: -1
+    textWrap: false
+    showTime: false

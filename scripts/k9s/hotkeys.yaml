@@ -1,0 +1,24 @@
+# One-key navigation for the scaling demo (listed in k9s under `?`).
+# Shift+letter is used instead of Shift+digit, because Shift+digit produces
+# different characters on non-US keyboard layouts (e.g. Danish).
+hotKeys:
+  shift-m:
+    shortCut: Shift-M
+    description: Microservice pods
+    command: ms
+  shift-d:
+    shortCut: Shift-D
+    description: Deployments
+    command: deployments
+  shift-x:
+    shortCut: Shift-X
+    description: KEDA ScaledObjects
+    command: scaledobjects
+  shift-h:
+    shortCut: Shift-H
+    description: HPAs (managed by KEDA)
+    command: hpa
+  shift-e:
+    shortCut: Shift-E
+    description: Events
+    command: events

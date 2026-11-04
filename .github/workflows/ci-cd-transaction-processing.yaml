@@ -1,0 +1,30 @@
+name: Transaction processing microservice - Build, Test, Push image to Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "transaction-processing/**" # Trigger if files in transaction-processing/ folder change
+
+  workflow_dispatch: # Allows you to manually run the workflow from the Actions tab
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }} # Store your Docker Hub username in GitHub Secrets
+          password: ${{ secrets.DOCKER_PASSWORD }} # Store your Docker Hub password/token in GitHub Secrets
+
+      # Build and push Docker image for transaction-processing microservice
+      - name: Build and push Docker image for transaction-processing microservice
+        run: |
+          docker build -t pesekt1/transaction-processing:latest ./transaction-processing
+          docker push pesekt1/transaction-processing:latest

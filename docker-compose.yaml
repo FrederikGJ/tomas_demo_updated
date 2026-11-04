@@ -1,0 +1,154 @@
+# We dont need volumes for MySQL because data would just accumulate.
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # RabbitMQ protocol port
+      - "15672:15672" # RabbitMQ management console
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - rabbitmq-net
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: transactions_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    # We dont need volumes
+    # volumes:
+    #   - mysql_data:/var/lib/mysql
+    networks:
+      - mysql-net
+
+  bank:
+    build:
+      context: ./bank
+      dockerfile: Dockerfile
+    image: pesekt1/bank:latest
+    volumes:
+      - ./logs:/var/log # Map its logs to a directory Promtail can access
+      - ./bank:/app # Mounted volume - for development purposes
+    environment:
+      PORT: 3002
+      MESSAGE_SPEED: 1000
+      API_URL: http://transaction-receiver:3000/transactions
+    networks:
+      - public-net
+
+  transaction-receiver:
+    build:
+      context: ./transaction-receiver
+      dockerfile: Dockerfile
+    image: pesekt1/transaction-receiver:latest
+    volumes:
+      - ./logs:/var/log
+      - ./transaction-receiver:/app # Mounted volume - for development purposes
+      #- /var/log/transaction-receiver:/var/log/transaction-receiver
+      # Map its logs to a directory Promtail can access
+    depends_on:
+      - rabbitmq
+    environment:
+      PORT: 3000
+      RABBITMQ_URL: amqp://rabbitmq
+      QUEUE_NAME: transactionPayloads
+    networks:
+      - public-net
+      - rabbitmq-net
+
+  fraud-detection:
+    build:
+      context: ./fraud-detection
+      dockerfile: Dockerfile
+    image: pesekt1/fraud-detection:latest
+    volumes:
+      - ./logs:/var/log
+      - ./fraud-detection:/app # Mounted volume - for development purposes
+    depends_on:
+      - rabbitmq
+    environment:
+      PORT: 3003
+      RABBITMQ_URL: amqp://rabbitmq
+      INPUT_QUEUE_NAME: transactionPayloads
+      ACCEPTED_QUEUE_NAME: acceptedTransactions
+      SUSPICIOUS_QUEUE_NAME: suspiciousTransactions
+      MESSAGE_PROCESSING_SPEED: 3000
+    networks:
+      - rabbitmq-net
+
+  transaction-processing:
+    build:
+      context: ./transaction-processing
+      dockerfile: Dockerfile
+    image: pesekt1/transaction-processing:latest
+    volumes:
+      - ./logs:/var/log
+      - ./transaction-processing:/app # Mounted volume - for development purposes
+    #removed the name because of scaling
+    #container_name: transaction-processing
+    depends_on:
+      - rabbitmq
+      - mysql
+    #removed the port mapping because of scaling
+    # ports:
+    #   - "3001:3001"
+    environment:
+      PORT: 3001
+      RABBITMQ_URL: amqp://rabbitmq
+      QUEUE_NAME: acceptedTransactions
+      DATABASE_URL: mysql://user:password@mysql:3306/transactions_db
+      MESSAGE_PROCESSING_SPEED: 3000
+    networks:
+      - rabbitmq-net
+      - mysql-net
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./docker-compose-config-yaml/loki-config.yaml:/etc/loki/local-config.yaml
+      - ./loki-data:/loki
+    environment:
+      - LOKI_CONFIG_FILE=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.1
+    container_name: promtail
+    volumes:
+      - ./logs:/var/log
+      - ./docker-compose-config-yaml/promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana # Mount volume for persistent storage
+
+volumes:
+  loki-data:
+  grafana-data:
+  var-log:
+# mysql_data: #removed because we dont want to accumulate data
+
+networks:
+  public-net:
+  rabbitmq-net:
+  mysql-net:

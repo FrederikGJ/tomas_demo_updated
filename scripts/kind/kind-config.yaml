@@ -1,0 +1,26 @@
+# Local kind cluster used by `make cluster` when no other cluster (e.g. Docker Desktop) is reachable.
+# The project's NodePorts are published on localhost - just like Docker Desktop does - so the URLs
+# in the README and the bank-service (which posts to localhost:32000) work unchanged.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30000 # Prometheus UI
+        hostPort: 30000
+        listenAddress: "127.0.0.1"
+      - containerPort: 30001 # Grafana
+        hostPort: 30001
+        listenAddress: "127.0.0.1"
+      - containerPort: 30007 # MySQL
+        hostPort: 30007
+        listenAddress: "127.0.0.1"
+      - containerPort: 30008 # RabbitMQ management UI
+        hostPort: 30008
+        listenAddress: "127.0.0.1"
+      - containerPort: 30009 # RabbitMQ AMQP
+        hostPort: 30009
+        listenAddress: "127.0.0.1"
+      - containerPort: 32000 # transaction-receiver API (bank-service sends here)
+        hostPort: 32000
+        listenAddress: "127.0.0.1"

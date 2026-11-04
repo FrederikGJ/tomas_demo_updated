@@ -1,0 +1,15 @@
+# Project shortcuts - type them in k9s command mode, e.g. `:tp` <enter>.
+# Format: <alias>: <resource> [namespace] [label=value | /name-regex]
+# Everything in this project runs in the `default` namespace.
+aliases:
+  # All microservice pods (filtered by pod name)
+  ms: pods default /transaction|fraud
+  # One microservice at a time (by the `app` label from kubernetes/*/...-deployment.yml)
+  tr: pods default app=transaction-receiver
+  tp: pods default app=transaction-processing
+  fd: pods default app=fraud-detection
+  mq: pods default app=rabbitmq
+  # Monitoring stack: Prometheus, Grafana, Loki, Promtail, RabbitMQ exporter
+  mon: pods default /prometheus|grafana|loki|promtail|exporter
+  # KEDA operator pods
+  kd: pods keda
