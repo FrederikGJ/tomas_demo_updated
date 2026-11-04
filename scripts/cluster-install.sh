@@ -12,8 +12,25 @@ cluster_reachable() {
   kubectl cluster-info --request-timeout=5s &> /dev/null
 }
 
+# kind publishes NodePorts on localhost only when the cluster is created, so a cluster made with an
+# older kind-config.yaml lacks the ports added since then. Warn instead of silently missing them.
+warn_missing_kind_ports() {
+  local node="${KIND_CLUSTER_NAME}-control-plane" missing="" port
+  for port in $(sed -n 's/.*containerPort: *\([0-9]*\).*/\1/p' "$KIND_CONFIG"); do
+    docker port "$node" "$port/tcp" &> /dev/null || missing="$missing $port"
+  done
+  if [ -n "$missing" ]; then
+    echo "⚠️  The kind cluster '$KIND_CLUSTER_NAME' was created before these ports were added to"
+    echo "   scripts/kind/kind-config.yaml, so they are NOT reachable on localhost:$missing"
+    echo "   Recreate the cluster to publish them: make cluster-delete && make up"
+  fi
+}
+
 if cluster_reachable; then
   echo "✅ Kubernetes cluster is reachable (context: $(kubectl config current-context)). Skipping cluster setup."
+  if [ "$(kubectl config current-context)" = "kind-$KIND_CLUSTER_NAME" ]; then
+    warn_missing_kind_ports
+  fi
   exit 0
 fi
 
@@ -33,6 +50,7 @@ if kind get clusters 2> /dev/null | grep -qx "$KIND_CLUSTER_NAME"; then
     sleep 2
   done
   cluster_reachable || { echo "❌ kind cluster '$KIND_CLUSTER_NAME' did not come up. Try: make cluster-delete && make cluster"; exit 1; }
+  warn_missing_kind_ports
 else
   echo "🚀 No reachable cluster found. Creating kind cluster '$KIND_CLUSTER_NAME'..."
   kind create cluster --name "$KIND_CLUSTER_NAME" --config "$KIND_CONFIG" --wait 120s

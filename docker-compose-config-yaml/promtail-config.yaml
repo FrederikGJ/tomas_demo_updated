@@ -49,3 +49,11 @@ scrape_configs:
         labels:
           job: transaction-processing
           __path__: /var/log/transaction-processing/*.log
+
+  - job_name: suspicious-dashboard
+    static_configs:
+      - targets:
+          - promtail:9080
+        labels:
+          job: suspicious-dashboard
+          __path__: /var/log/suspicious-dashboard/*.log

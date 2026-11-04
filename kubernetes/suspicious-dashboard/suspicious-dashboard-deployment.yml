@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: suspicious-dashboard
+spec:
+  # Keep this at 1 replica and do not add a KEDA ScaledObject:
+  # RabbitMQ gives each message to only ONE consumer (competing consumers), and the dashboard
+  # keeps its history in memory. With 2 replicas, each browser would only see the part of the
+  # suspicious transactions that its pod happened to receive.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: suspicious-dashboard
+  template:
+    metadata:
+      labels:
+        app: suspicious-dashboard
+    spec:
+      containers:
+      - name: suspicious-dashboard
+        image: suspicious-dashboard # built locally by Skaffold (see skaffold.yaml)
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        ports:
+        - containerPort: 3004
+        env:
+        - name: PORT
+          value: "3004"
+        - name: RABBITMQ_URL
+          value: "amqp://rabbitmq"
+        - name: SUSPICIOUS_QUEUE_NAME
+          value: "suspiciousTransactions"
+        - name: HISTORY_SIZE
+          value: "500"
+        volumeMounts:
+          - name: log-volume
+            mountPath: /var/log/suspicious-dashboard  # Mount the log directory to this path
+      volumes:
+        - name: log-volume
+          hostPath:
+            path: /var/log/suspicious-dashboard  # This should be the location of logs on the node
+            type: DirectoryOrCreate

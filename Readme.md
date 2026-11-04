@@ -89,8 +89,24 @@ After deployment, you can access the following services:
 | RabbitMQ          | http://localhost:30008 | guest    | guest    |
 | RabbitMQ Exporter | http://localhost:9419  | -        | -        |
 | MySQL             | (via MySQL Workbench)  | root     | root     |
+| Suspicious dashboard | http://localhost:3004 (Skaffold port-forward) or http://localhost:30010 (NodePort) | - | - |
 
 > Note: If you use port-forwarding, ensure the relevant commands are running (see Quick Start and Extra Info sections).
+
+### Suspicious Transactions Dashboard
+
+fraud-detection sends about 5% of the transactions to the `suspiciousTransactions` queue. The `suspicious-dashboard` service consumes that queue and shows the flagged transactions live in the browser (plain HTML, CSS and JS in `suspicious-dashboard/public`):
+
+- **Key figures**: flagged since start, flagged in the last 5 minutes, detection delay and the largest amount
+- **Flagged per minute** for the last 30 minutes
+- **Detection delay**: seconds from the bank sending a transaction until fraud-detection flagged it. It rises when the `transactionPayloads` queue backs up and falls again when KEDA scales out fraud-detection, so it shows the effect of the scaling.
+- **Latest flagged transactions** (open a row for the full account id and the reason) and **top currencies**
+
+How it works: the service consumes the queue with `amqplib` and pushes each message to the open browsers with Server-Sent Events (`GET /events`). It keeps the latest 500 transactions in memory, so a newly opened page shows them right away. Other endpoints: `GET /api/suspicious` (the same data as JSON) and `GET /health`.
+
+The dashboard always runs as **one replica without a ScaledObject**: RabbitMQ gives each message to only one consumer, so with more replicas each browser would only see the part of the messages that its pod received.
+
+With Skaffold the image is built locally (see `build.artifacts` in `skaffold.yaml`), and changes in `suspicious-dashboard/public` are synced into the running pod, so you only need to reload the browser. NodePort 30010 is published on localhost by Docker Desktop, and by kind clusters created with the current `scripts/kind/kind-config.yaml`. An older kind cluster needs `make cluster-delete` before `make up`, or use the port-forward on 3004.
 
 ### Terminal Dashboard (k9s)
 
@@ -104,8 +120,8 @@ If k9s isn't installed, `scripts/k9s.sh` downloads k9s v0.51.0 into `~/.local/bi
 
 | Key / command              | What it does                                                                        |
 | -------------------------- | ----------------------------------------------------------------------------------- |
-| `Shift-M` or `:ms`         | Microservice pods (transaction-receiver, transaction-processing, fraud-detection)   |
-| `:tr` `:tp` `:fd` `:mq`    | Pods of one service: transaction-receiver, transaction-processing, fraud-detection, RabbitMQ |
+| `Shift-M` or `:ms`         | Microservice pods (transaction-receiver, transaction-processing, fraud-detection, suspicious-dashboard) |
+| `:tr` `:tp` `:fd` `:sd` `:mq` | Pods of one service: transaction-receiver, transaction-processing, fraud-detection, suspicious-dashboard, RabbitMQ |
 | `:mon` / `:kd`             | Monitoring pods (Prometheus, Grafana, Loki, Promtail, exporter) / KEDA operator pods |
 | `Shift-D`                  | Deployments                                                                         |
 | `Shift-X`                  | KEDA ScaledObjects. `Enter` on one shows the pods it scales                         |
@@ -129,6 +145,7 @@ Simple local development and manual scaling.
   ```bash
   docker-compose up --build -d
   ```
+  The suspicious transactions dashboard is at http://localhost:3004.
 - Stop:
   ```bash
   docker-compose down

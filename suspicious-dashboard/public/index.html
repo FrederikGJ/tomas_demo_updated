@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Suspicious transactions</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div>
+          <h1>Suspicious transactions</h1>
+          <p class="subtitle">
+            Live from the RabbitMQ queue <code id="queue-name">suspiciousTransactions</code>, flagged by
+            fraud-detection
+          </p>
+        </div>
+        <div class="status-row">
+          <span class="pill" id="stream-status" data-state="connecting">
+            <span class="pill-icon" aria-hidden="true"></span>
+            <span class="pill-label">Connecting…</span>
+          </span>
+          <span class="pill" id="rabbit-status" data-state="unknown">
+            <span class="pill-icon" aria-hidden="true"></span>
+            <span class="pill-label">RabbitMQ</span>
+          </span>
+        </div>
+      </header>
+
+      <section class="kpis" aria-label="Key figures">
+        <div class="tile">
+          <div class="tile-label">Flagged since start</div>
+          <div class="tile-value" id="kpi-total">0</div>
+          <div class="tile-note" id="kpi-total-note">&nbsp;</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">Last 5 minutes</div>
+          <div class="tile-value" id="kpi-recent">0</div>
+          <div class="tile-note" id="kpi-recent-note">&nbsp;</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">Detection delay</div>
+          <div class="tile-value" id="kpi-delay">–</div>
+          <div class="tile-note" id="kpi-delay-note">median, bank → flagged</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">Largest amount</div>
+          <div class="tile-value" id="kpi-largest">–</div>
+          <div class="tile-note" id="kpi-largest-note">&nbsp;</div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card span-6" data-chart="rate">
+          <header class="card-head">
+            <div>
+              <h2>Flagged per minute</h2>
+              <p>Last 30 minutes, by the time fraud-detection flagged them</p>
+            </div>
+            <button type="button" class="view-toggle" aria-pressed="false">Table</button>
+          </header>
+          <div class="chart" tabindex="0" aria-label="Column chart: suspicious transactions flagged per minute. Use the arrow keys to read each minute."></div>
+          <div class="table-view" hidden></div>
+        </article>
+
+        <article class="card span-6" data-chart="delay">
+          <header class="card-head">
+            <div>
+              <h2>Detection delay</h2>
+              <p>Seconds from the bank sending a transaction until fraud-detection flagged it</p>
+            </div>
+            <button type="button" class="view-toggle" aria-pressed="false">Table</button>
+          </header>
+          <div class="chart" tabindex="0" aria-label="Dot chart: detection delay in seconds for each suspicious transaction. Use the arrow keys to read each transaction."></div>
+          <div class="table-view" hidden></div>
+          <p class="card-note">
+            Rises when the <code>transactionPayloads</code> queue backs up, and falls again when KEDA scales out
+            fraud-detection.
+          </p>
+        </article>
+
+        <article class="card span-8">
+          <header class="card-head">
+            <div>
+              <h2>Latest flagged transactions</h2>
+              <p>Newest first. Open a row to see the full account id and the reason.</p>
+            </div>
+          </header>
+          <div class="feed-head" aria-hidden="true">
+            <span>Flagged</span><span>Account</span><span class="num">Amount</span><span class="num">Delay</span>
+          </div>
+          <div class="feed" id="feed"></div>
+          <p class="empty" id="feed-empty">
+            No suspicious transactions yet. fraud-detection flags about 5% of the transactions it checks.
+          </p>
+        </article>
+
+        <article class="card span-4" data-chart="currencies">
+          <header class="card-head">
+            <div>
+              <h2>Top currencies</h2>
+              <p id="currencies-subtitle">Among the latest flagged transactions</p>
+            </div>
+            <button type="button" class="view-toggle" aria-pressed="false">Table</button>
+          </header>
+          <div class="chart chart-html"></div>
+          <div class="table-view" hidden></div>
+        </article>
+      </section>
+    </div>
+
+    <div class="tooltip" id="tooltip" role="status" hidden></div>
+  </body>
+</html>

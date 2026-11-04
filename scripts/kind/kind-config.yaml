@@ -21,6 +21,9 @@ nodes:
       - containerPort: 30009 # RabbitMQ AMQP
         hostPort: 30009
         listenAddress: "127.0.0.1"
+      - containerPort: 30010 # suspicious-dashboard GUI
+        hostPort: 30010
+        listenAddress: "127.0.0.1"
       - containerPort: 32000 # transaction-receiver API (bank-service sends here)
         hostPort: 32000
         listenAddress: "127.0.0.1"

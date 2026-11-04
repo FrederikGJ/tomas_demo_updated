@@ -110,6 +110,26 @@ services:
       - rabbitmq-net
       - mysql-net
 
+  suspicious-dashboard:
+    build:
+      context: ./suspicious-dashboard
+      dockerfile: Dockerfile
+    image: suspicious-dashboard:latest
+    volumes:
+      - ./logs:/var/log
+      - ./suspicious-dashboard:/app # Mounted volume - for development purposes
+      - /app/node_modules # keep the node_modules from the image (hidden by the mount above otherwise)
+    depends_on:
+      - rabbitmq
+    ports:
+      - "3004:3004" # GUI: http://localhost:3004
+    environment:
+      PORT: 3004
+      RABBITMQ_URL: amqp://rabbitmq
+      SUSPICIOUS_QUEUE_NAME: suspiciousTransactions
+    networks:
+      - rabbitmq-net
+
   loki:
     image: grafana/loki:latest
     container_name: loki

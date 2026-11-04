@@ -5,6 +5,16 @@ metadata:
 build:
   local:
     push: false
+  # The other services use the pre-built pesekt1/* images from Docker Hub.
+  # The suspicious-dashboard is built locally (and loaded into kind automatically).
+  artifacts:
+    - image: suspicious-dashboard
+      context: suspicious-dashboard
+      sync:
+        # Changes to the GUI are copied straight into the running pod - just reload the browser
+        manual:
+          - src: "public/**"
+            dest: .
 deploy:
   kubectl:
     manifests:
@@ -21,3 +31,8 @@ portForward:
     namespace: default
     port: 9090
     localPort: 9090
+  - resourceType: service
+    resourceName: suspicious-dashboard
+    namespace: default
+    port: 3004
+    localPort: 3004
